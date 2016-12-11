@@ -1,18 +1,18 @@
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  * Created by root on 10/12/16.
  */
-public class ListFilesInADirectory {
+public class IOList {
 
-    /**
-     * Lists all inner directories
+    /** Lists all directories
      * @param rootDirectory
      * @param includeRoot
      * @throws IOException
@@ -35,7 +35,15 @@ public class ListFilesInADirectory {
         return result;
     }
 
+    /** List directories filtering using pathMatcherStr
+     * @param rootDirectory
+     * @param includeRoot
+     * @param pathMatcherStr
+     * @return
+     */
     public static List<Path> listDirectories(Path rootDirectory, boolean includeRoot, String pathMatcherStr){
+        if(StringUtils.isEmpty(pathMatcherStr))
+            throw new RuntimeException("pathMatcherStr must be valid!");
         List<Path> result= listDirectories(rootDirectory, includeRoot);
         result= result
                 .stream()
@@ -52,6 +60,12 @@ public class ListFilesInADirectory {
         return result;
     }
 
+    /** Lists all files inside, also accepts a pathMatcherStr to filter
+     * @param rootDirectory
+     * @param includeInnerDirectories
+     * @param pathMatcherStr
+     * @return
+     */
     public static List<Path> listFiles(Path rootDirectory, boolean includeInnerDirectories, Optional<String> pathMatcherStr){
         List<Path> directories, result= new ArrayList<>();
         if(!Files.isDirectory(rootDirectory))

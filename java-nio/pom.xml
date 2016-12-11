@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>c.cp.java.nio</groupId>
-    <artifactId>java7-nio</artifactId>
+    <artifactId>java-nio</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -42,6 +42,13 @@
             <version>4.12</version>
         </dependency>
 
-    </dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
+        </dependency>
 
+
+    </dependencies>
+    <name>java-nio</name>
 </project>
