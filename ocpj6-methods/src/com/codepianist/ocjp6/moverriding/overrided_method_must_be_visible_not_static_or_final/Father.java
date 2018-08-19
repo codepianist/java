@@ -1,0 +1,27 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package com.codepianist.ocjp6.moverriding.overrided_method_must_be_visible_not_static_or_final;
+
+/**
+ * <h1>Father</h1> 
+ * <p>created on: Aug 4, 2013, 11:49:32 PM.</p>
+ *
+ * @author César Barbosa <cesar@vesso.com.br>
+ */
+public class Father {
+    private void privateM(){
+        System.out.println("privateM()");
+    }
+    public void publicM(){
+        System.out.println("publicM()");
+    }
+    public static void staticM(){
+        System.out.println("staticM");
+    }
+    public final void finalM(){
+        System.out.println("finalM");
+    }
+}
