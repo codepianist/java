@@ -1,9 +1,7 @@
 package com.codepianist.springbatch.cfg;
 
-import com.codepianist.springbatch.StringLocalDateFieldsetMapper;
 import com.codepianist.springbatch.model.AssetProcessor;
 import com.codepianist.springbatch.model.entity.AssetEntity;
-import lombok.Value;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -19,6 +17,9 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -31,7 +32,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import java.net.MalformedURLException;
 import java.time.LocalDate;
-import java.util.Map;
+import java.time.format.DateTimeFormatter;
 
 @EnableJpaRepositories
 @EnableTransactionManagement
@@ -40,16 +41,60 @@ import java.util.Map;
 public class BatchConfig {
 
     @Bean
-    public FlatFileItemReader reader() {
+    public FlatFileItemReader reader(FieldSetMapper fieldSetMapper) {
         return new FlatFileItemReaderBuilder<>().name("pricesReader")
                 .resource(new ClassPathResource("prices.csv"))
                 .delimited()
                 .names(new String[]{"label", "moment", "hit", "price"})
-                .fieldSetMapper(new BeanWrapperFieldSetMapper<>() {{
-                    setCustomEditors(Map.of(new StringLocalDateFieldsetMapper<>()));
-                    setTargetType(AssetEntity.class);
-                }})
+                .fieldSetMapper(fieldSetMapper)
+//                .fieldSetMapper(new BeanWrapperFieldSetMapper<>() {
+//                    @Override
+//                    protected void initBinder(DataBinder binder) {
+//                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+//                        binder.registerCustomEditor(LocalDate.class, new PropertyEditorSupport() {
+//                            @Override
+//                            public void setAsText(String text) throws IllegalArgumentException {
+//                                if (StringUtils.isNotEmpty(text)) {
+//                                    setValue(LocalDate.parse(text, formatter));
+//                                } else {
+//                                    setValue(null);
+//                                }
+//                            }
+//
+//                            @Override
+//                            public String getAsText() throws IllegalArgumentException {
+//                                Object date = getValue();
+//                                if (date != null) {
+//                                    return formatter.format((LocalDate) date);
+//                                } else {
+//                                    return "";
+//                                }
+//                            }
+//                        });
+//                    }
+//                })
                 .build();
+    }
+
+    @Bean
+    public ConversionService localDateConversionService() {
+        DefaultConversionService testConversionService = new DefaultConversionService();
+        DefaultConversionService.addDefaultConverters(testConversionService);
+        testConversionService.addConverter(new Converter<String, LocalDate>() {
+            @Override
+            public LocalDate convert(String text) {
+                return LocalDate.parse(text, DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            }
+        });
+        return testConversionService;
+    }
+
+    @Bean
+    public FieldSetMapper<AssetEntity> classRowMapper(ConversionService conversionService) {
+        BeanWrapperFieldSetMapper<AssetEntity> mapper = new BeanWrapperFieldSetMapper<>();
+        mapper.setConversionService(conversionService);
+        mapper.setTargetType(AssetEntity.class);
+        return mapper;
     }
 
     @Bean
@@ -77,10 +122,10 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step step1(JdbcBatchItemWriter writer, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    public Step step1(FieldSetMapper fieldSetMapper, JdbcBatchItemWriter writer, JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("importUserJob", jobRepository)
                 .<String[], AssetEntity>chunk(10, transactionManager)
-                .reader(reader())
+                .reader(reader(fieldSetMapper))
                 .processor(assetProcessor())
                 .writer(writer)
                 .build();
@@ -89,14 +134,14 @@ public class BatchConfig {
 
     @Bean
     public DataSourceInitializer dataSourceInitializer(DataSource dataSource) throws MalformedURLException {
-        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator();
-        databasePopulator.addScript(getResource("org/springframework/batch/core/schema-drop-mariadb.sql"));
-        databasePopulator.addScript(getResource("org/springframework/batch/core/schema-mariadb.sql"));
-        databasePopulator.setIgnoreFailedDrops(true);
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(getResource("org/springframework/batch/core/schema-drop-mariadb.sql"));
+        populator.addScript(getResource("org/springframework/batch/core/schema-mariadb.sql"));
+        populator.setIgnoreFailedDrops(true);
 
         DataSourceInitializer initializer = new DataSourceInitializer();
         initializer.setDataSource(dataSource);
-        initializer.setDatabasePopulator(databasePopulator);
+        initializer.setDatabasePopulator(populator);
 
         return initializer;
     }
