@@ -10,6 +10,10 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.28'  // Lombok compile-only dependency
+    annotationProcessor 'org.projectlombok:lombok:1.18.28'  // Lombok annotation processor
+    implementation 'org.slf4j:slf4j-api:2.0.7'  // SLF4J API
+    implementation 'org.slf4j:slf4j-simple:2.0.7'  // Simple SLF4J implementation, can be replaced with another binding like logback
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
